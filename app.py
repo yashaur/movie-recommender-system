@@ -1,53 +1,124 @@
 import streamlit as st
-from random import sample
-import pickle
-import json
+import pandas as pd
+from app.recommender import get_recommendations, indices
+from app.generate_poster import get_poster_url
 
-with open('keywords.pkl', 'rb') as f:
-    keywords = json.loads(pickle.load(f))
+st.set_page_config(page_title="Movie Recommender", layout="wide")
 
-top_keywords = [kw for kw in keywords if keywords[kw] > 100]
+st.markdown("""
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
+ 
+        html, body, [class*="css"] {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #0e0e0e;
+            color: #f0f0f0;
+        }
+        .title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 3rem;
+            color: #f0f0f0;
+            margin-bottom: 0;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
+        }
+        .stButton > button {
+            background-color: #f0f0f0;
+            color: #0e0e0e;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 2rem;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+        .stButton > button:hover { opacity: 0.85; }
+        .movie-title {
+            font-size: 0.85rem;
+            color: #ccc;
+            text-align: center;
+            margin-top: 0.4rem;
+            line-height: 1.3;
+        }
+        .section-label {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: #f0f0f0;
+        }
+        hr { border-color: #222; margin: 2rem 0; }
+ 
+        @keyframes fadeScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+ 
+        [data-testid="stImage"] img {
+            animation: fadeScale 0.5s ease forwards;
+            opacity: 0;
+        }
+ 
+        [data-testid="stImage"]:nth-child(1) img { animation-delay: 0.0s; }
+        [data-testid="stImage"]:nth-child(2) img { animation-delay: 0.1s; }
+        [data-testid="stImage"]:nth-child(3) img { animation-delay: 0.2s; }
+        [data-testid="stImage"]:nth-child(4) img { animation-delay: 0.3s; }
+        [data-testid="stImage"]:nth-child(5) img { animation-delay: 0.4s; }
+        [data-testid="stImage"]:nth-child(6) img { animation-delay: 0.5s; }
+        [data-testid="stImage"]:nth-child(7) img { animation-delay: 0.6s; }
+        [data-testid="stImage"]:nth-child(8) img { animation-delay: 0.7s; }
+        [data-testid="stImage"]:nth-child(9) img { animation-delay: 0.8s; }
+        [data-testid="stImage"]:nth-child(10) img { animation-delay: 0.9s; }
+    </style>
+""", unsafe_allow_html=True)
 
-def generate_keywords():
-    st.session_state['random_keywords'] = sample(top_keywords, 18)
 
-st.title('MOVIE KEYWORD RECOMMENDER')
+# --- Header ---
+st.markdown('<p class="title">Cinescope</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Enter three films you love. We\'ll find your next favourite.</p>', unsafe_allow_html=True)
 
-st.write('Pick a few keywords:')
+# --- Inputs ---
+valid_titles = indices.index.tolist()
 
-st.space('medium')
+col1, col2, col3 = st.columns(3)
+with col1:
+    movie1 = st.selectbox("First movie", options=[""] + valid_titles, index=0)
+with col2:
+    movie2 = st.selectbox("Second movie", options=[""] + valid_titles, index=0)
+with col3:
+    movie3 = st.selectbox("Third movie", options=[""] + valid_titles, index=0)
 
-if 'random_keywords' not in st.session_state:
-    st.session_state['random_keywords'] = generate_keywords()
-random_keywords = st.session_state['random_keywords']
+_, btn_col, _ = st.columns([2, 1, 2])
+with btn_col:
+    submitted = st.button("Find Recommendations")
 
-st.button('generate again', on_click=generate_keywords)
+# --- Recommendations ---
+if submitted:
+    titles = [movie1, movie2, movie3]
+    missing = [t for t in titles if not t.strip()]
+    if missing:
+        st.warning("Please enter all three movie titles.")
+    else:
+        with st.spinner("Finding recommendations..."):
+            try:
+                recommendations = get_recommendations(
+                    movie_titles=titles
+                )
+                st.markdown("<hr>", unsafe_allow_html=True)
+                st.markdown('<p class="section-label">Recommended for you</p>', unsafe_allow_html=True)
 
-kw1, kw2, kw3, kw4, kw5, kw6 = st.columns(6)
+                cols = st.columns(5)
+                for i, title in enumerate(recommendations):
+                    with cols[i % 5]:
+                        poster_url = get_poster_url(title)
+                        if poster_url:
+                            st.image(poster_url, use_container_width=True)
+                        else:
+                            st.image("https://via.placeholder.com/300x450?text=No+Poster", use_container_width=True)
+                        st.markdown(f'<p class="movie-title">{title}</p>', unsafe_allow_html=True)
 
-kw1.button(label = random_keywords[0])
-kw2.button(label = random_keywords[1])
-kw3.button(label = random_keywords[2])
-kw4.button(label = random_keywords[3])
-kw5.button(label = random_keywords[4])
-kw6.button(label = random_keywords[5])
-
-kw7, kw8, kw9, kw10, kw11, kw12 = st.columns(6)
-
-kw7.button(label = random_keywords[6])
-kw8.button(label = random_keywords[7])
-kw9.button(label = random_keywords[8])
-kw10.button(label = random_keywords[9])
-kw11.button(label = random_keywords[10])
-kw12.button(label = random_keywords[11])
-
-kw13, kw14, kw15, kw16, kw17, kw18 = st.columns(6)
-
-kw13.button(label = random_keywords[12])
-kw14.button(label = random_keywords[13])
-kw15.button(label = random_keywords[14])
-kw16.button(label = random_keywords[15])
-kw17.button(label = random_keywords[16])
-kw18.button(label = random_keywords[17])
-
-st.button('Recommend me some movies')
+            except KeyError as e:
+                st.error(f"Movie not found in dataset: {e}. Please check the title and try again.")
