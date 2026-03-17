@@ -38,8 +38,8 @@ st.markdown("""
         }
         .stButton > button:hover { opacity: 0.85; }
         .movie-title {
-            font-size: 0.85rem;
-            color: #ccc;
+            font-size: 1rem;
+            color: #A9A9A9;
             text-align: center;
             margin-top: 0.4rem;
             line-height: 1.3;
@@ -72,6 +72,7 @@ st.markdown("""
         [data-testid="stImage"]:nth-child(8) img { animation-delay: 0.7s; }
         [data-testid="stImage"]:nth-child(9) img { animation-delay: 0.8s; }
         [data-testid="stImage"]:nth-child(10) img { animation-delay: 0.9s; }
+            
     </style>
 """, unsafe_allow_html=True)
 
@@ -96,6 +97,7 @@ with btn_col:
     submitted = st.button("Find Recommendations")
 
 # --- Recommendations ---
+
 if submitted:
     titles = [movie1, movie2, movie3]
     missing = [t for t in titles if not t.strip()]
@@ -107,6 +109,7 @@ if submitted:
                 recommendations = get_recommendations(
                     movie_titles=titles
                 )
+                print(recommendations)
                 st.markdown("<hr>", unsafe_allow_html=True)
                 st.markdown('<p class="section-label">Recommended for you</p>', unsafe_allow_html=True)
 
@@ -115,9 +118,9 @@ if submitted:
                     with cols[i % 5]:
                         poster_url = get_poster_url(title)
                         if poster_url:
-                            st.image(poster_url, use_container_width=True)
+                            st.image(poster_url, width='stretch')
                         else:
-                            st.image("https://via.placeholder.com/300x450?text=No+Poster", use_container_width=True)
+                            st.image("https://via.placeholder.com/300x450?text=No+Poster", width='content')
                         st.markdown(f'<p class="movie-title">{title}</p>', unsafe_allow_html=True)
 
             except KeyError as e:

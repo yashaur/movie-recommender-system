@@ -1,20 +1,45 @@
 import requests
-
-API_KEY = '54a3f35e89c5e2709f8ecbf1eedba06c'
-AUTH_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1NGEzZjM1ZTg5YzVlMjcwOWY4ZWNiZjFlZWRiYTA2YyIsIm5iZiI6MTc3MzMyMDQ2Ny45MTkwMDAxLCJzdWIiOiI2OWIyYjkxMzQ4YjUyNDljYmY0YjZmYmYiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.ED801PxjJCn1oLKNZllqZyR367StbWjRzwOitoq4t88"
-
-HEADERS = {'Authorization': f'Bearer {AUTH_TOKEN}'}
-BASE_URL = 'https://api.themoviedb.org/3'
-POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w300'
+import time
+from io import BytesIO
+from PIL import Image
 
 def get_poster_url(movie_title):
-    response = requests.get(
-        f'{BASE_URL}/search/movie',
-        headers=HEADERS,
-        params={'query': movie_title},
-        timeout=10
-    )
-    results = response.json().get('results')
-    if not results:
-        return None
-    return POSTER_BASE_URL + results[0]['poster_path']
+    
+    API_KEY = '46f52586'
+    BASE_URL = 'http://www.omdbapi.com'
+    POSTER_BASE_URL = 'http://img.omdbapi.com'
+
+
+    
+    try:
+        params_omdb = {
+        't': movie_title,
+        'apikey': API_KEY
+                }
+        response = requests.get(BASE_URL, params=params_omdb).json()
+            
+    except:
+        params_omdb = {
+        's': movie_title,
+        'apikey': API_KEY
+                }
+
+        response = requests.get(BASE_URL, params=params_omdb).json()['Search'][0]
+    
+    id = response['imdbID']
+    imdb_poster_url = response['Poster']
+        
+    try:
+        params_poster = {
+                            'i': id,
+                            'h': 300,
+                            'apikey': API_KEY
+            }
+
+        poster = Image.open(BytesIO(requests.get(POSTER_BASE_URL, params = params_poster).content))
+
+    except:
+        poster = Image.open(BytesIO(requests.get(imdb_poster_url).content))
+
+    finally:
+        return poster
