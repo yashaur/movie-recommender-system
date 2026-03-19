@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cinescope</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0e0e0e;
+      --bg-card:    #161616;
+      --bg-modal:   #121212;
+      --border:     #2a2a2a;
+      --text:       #f0f0f0;
+      --muted:      #888;
+      --accent:     #f0f0f0;
+      --danger:     #e05252;
+      --radius:     10px;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 4rem 2rem 6rem;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.4rem, 5vw, 3.4rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 300;
+      margin-bottom: 3rem;
+    }
+
+    /* ── Form ───────────────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.45rem;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      padding: 0.7rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      list-style: none;
+    }
+
+    .field input:focus {
+      border-color: #555;
+    }
+
+    /* datalist dropdown arrow hint */
+    .field input::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.4; cursor: pointer; }
+
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.7rem 3rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .btn-primary:hover  { opacity: 0.88; }
+    .btn-primary:active { transform: scale(0.97); }
+
+    /* ── Feedback ───────────────────────────────────────────────── */
+    .msg {
+      text-align: center;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      min-height: 1.4em;
+    }
+    .msg.warn  { color: #d4a84b; }
+    .msg.error { color: var(--danger); }
+
+    /* spinner */
+    .spinner {
+      display: none;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+    .spinner.active { display: flex; }
+    .spinner-ring {
+      width: 32px; height: 32px;
+      border: 3px solid #333;
+      border-top-color: var(--text);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Divider ────────────────────────────────────────────────── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0 2rem;
+    }
+
+    /* ── Results section ────────────────────────────────────────── */
+    #results { display: none; }
+    #results.visible { display: block; }
+
+    .section-label {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      margin-bottom: 0.4rem;
+    }
+
+    .section-hint {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Gallery ────────────────────────────────────────────────── */
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .poster-card {
+      width: 187px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .poster-card img {
+      width: 187px;
+      height: 280px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 2px solid transparent;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      /* staggered fade-in */
+      opacity: 0;
+      animation: fadeScale 0.45s ease forwards;
+    }
+
+    .poster-card:hover img {
+      transform: scale(1.04);
+      box-shadow: 0 10px 32px rgba(0,0,0,0.75);
+      border-color: #555;
+    }
+
+    .poster-card .movie-title {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 0.55rem;
+      line-height: 1.35;
+      width: 187px;
+    }
+
+    @keyframes fadeScale {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* stagger delays for up to 10 cards */
+    .poster-card:nth-child(1)  img { animation-delay: 0.00s; }
+    .poster-card:nth-child(2)  img { animation-delay: 0.07s; }
+    .poster-card:nth-child(3)  img { animation-delay: 0.14s; }
+    .poster-card:nth-child(4)  img { animation-delay: 0.21s; }
+    .poster-card:nth-child(5)  img { animation-delay: 0.28s; }
+    .poster-card:nth-child(6)  img { animation-delay: 0.35s; }
+    .poster-card:nth-child(7)  img { animation-delay: 0.42s; }
+    .poster-card:nth-child(8)  img { animation-delay: 0.49s; }
+    .poster-card:nth-child(9)  img { animation-delay: 0.56s; }
+    .poster-card:nth-child(10) img { animation-delay: 0.63s; }
+
+    /* ── Modal overlay ──────────────────────────────────────────── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--bg-modal);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 780px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 2rem;
+      position: relative;
+      animation: modalIn 0.25s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(12px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem; right: 1.2rem;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 580px) {
+      .modal-body { grid-template-columns: 1fr; }
+    }
+
+    .modal-poster {
+      width: 100%;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+
+    .modal-info { padding-top: 0.25rem; }
+
+    .modal-movie-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      line-height: 1.2;
+      margin-bottom: 0.3rem;
+    }
+
+    .modal-year {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 0.8rem;
+    }
+
+    .modal-tagline {
+      color: #aaa;
+      font-style: italic;
+      font-size: 0.93rem;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .modal-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1rem 0;
+    }
+
+    .modal-crew-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #666;
+      font-weight: 500;
+      margin: 0 0 0.3rem;
+    }
+    .modal-crew-value {
+      font-size: 0.9rem;
+      color: #ddd;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .modal-overview {
+      color: #ccc;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <h1 class="title">Cinescope</h1>
+    <p class="subtitle">Enter three films you love. We'll find your next favourite.</p>
+
+    <!-- ── Form ───────────────────────────────────────────────── -->
+    <form id="rec-form" autocomplete="off" onsubmit="handleSubmit(event)">
+
+      <!-- datalist provides the autocomplete dropdown from your movie list -->
+      <datalist id="movie-list">
+        <!-- ⚙️  Populated dynamically by loadMovieTitles() on page load -->
+      </datalist>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="m1">First movie</label>
+          <input id="m1" list="movie-list" placeholder="e.g. Inception" />
+        </div>
+        <div class="field">
+          <label for="m2">Second movie</label>
+          <input id="m2" list="movie-list" placeholder="e.g. The Dark Knight" />
+        </div>
+        <div class="field">
+          <label for="m3">Third movie</label>
+          <input id="m3" list="movie-list" placeholder="e.g. Interstellar" />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn-primary">Find Recommendations</button>
+      </div>
+
+    </form>
+
+    <p id="msg" class="msg"></p>
+    <div id="spinner" class="spinner"><div class="spinner-ring"></div></div>
+
+    <!-- ── Results ─────────────────────────────────────────────── -->
+    <div id="results">
+      <hr class="divider" />
+      <p class="section-label">Recommended for you</p>
+      <p class="section-hint">Click a poster to see more details.</p>
+      <div id="gallery" class="gallery"></div>
+    </div>
+
+  </div><!-- /page -->
+
+  <!-- ── Modal ───────────────────────────────────────────────── -->
+  <div id="modal-backdrop" class="modal-backdrop" onclick="closeModalOnBackdrop(event)">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+      <div class="modal-body">
+        <img id="modal-poster" class="modal-poster" src="" alt="Movie poster" />
+        <div class="modal-info">
+          <h2 id="modal-title"  class="modal-movie-title"></h2>
+          <p  id="modal-year"    class="modal-year"></p>
+          <p  id="modal-runtime" class="modal-year"></p>
+          <p  id="modal-tagline" class="modal-tagline"></p>
+          <div id="modal-crew" style="margin-bottom: 1rem;">
+            <p class="modal-crew-label">Director</p>
+            <p id="modal-director" class="modal-crew-value"></p>
+            <p class="modal-crew-label" style="margin-top: 0.75rem;">Cast</p>
+            <p id="modal-cast" class="modal-crew-value"></p>
+          </div>
+          <hr class="modal-divider" />
+          <p  id="modal-overview" class="modal-overview"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ────────────────────────────────────────────────────────────────────────
+    // CONFIG
+    // ────────────────────────────────────────────────────────────────────────
+    //
+    // ⚙️  Point these at your FastAPI / Flask backend.
+    //    Expected contract:
+    //
+    //    GET  /titles
+    //         → { "titles": ["Inception", "The Dark Knight", ...] }
+    //
+    //    POST /recommend
+    //         body: { "titles": ["Movie A", "Movie B", "Movie C"] }
+    //         → { "recommendations": [
+    //               { "title": "...", "year": 2010, "tagline": "...",
+    //                 "overview": "...", "poster": "<base64 jpeg>" },
+    //               ...   (10 items)
+    //             ] }
+    //
+    const API_BASE = "";
+
+    // ────────────────────────────────────────────────────────────────────────
+    // On load: fetch valid titles to populate the datalist
+    // ────────────────────────────────────────────────────────────────────────
+    async function loadMovieTitles() {
+      try {
+        const res  = await fetch(`${API_BASE}/titles`);
+        const data = await res.json();
+        const list = document.getElementById("movie-list");
+        data.titles.forEach(t => {
+          const opt = document.createElement("option");
+          opt.value = t;
+          list.appendChild(opt);
+        });
+      } catch (e) {
+        // Non-fatal — inputs still work without autocomplete
+        console.warn("Could not load movie titles:", e);
+      }
+    }
+
+    loadMovieTitles();
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Form submit → call /recommend
+    // ────────────────────────────────────────────────────────────────────────
+    async function handleSubmit(e) {
+      e.preventDefault();
+
+      const titles = [
+        document.getElementById("m1").value.trim(),
+        document.getElementById("m2").value.trim(),
+        document.getElementById("m3").value.trim(),
+      ];
+
+      // Validate
+      if (titles.some(t => !t)) {
+        showMsg("Please enter all three movie titles.", "warn");
+        return;
+      }
+
+      clearMsg();
+      showSpinner(true);
+      hideResults();
+
+      try {
+        const res  = await fetch(`${API_BASE}/recommend`, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ titles }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `Server error ${res.status}`);
+        }
+
+        const data = await res.json();
+        renderGallery(data.recommendations);
+
+      } catch (err) {
+        showMsg(err.message, "error");
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Render poster gallery
+    // ────────────────────────────────────────────────────────────────────────
+    function renderGallery(movies) {
+      const gallery = document.getElementById("gallery");
+      gallery.innerHTML = "";
+
+      movies.forEach((movie, i) => {
+        const card = document.createElement("div");
+        card.className = "poster-card";
+        card.onclick = () => openModal(movie);
+
+        const img = document.createElement("img");
+        img.src = movie.poster
+          ? `data:image/jpeg;base64,${movie.poster}`
+          : "https://via.placeholder.com/300x450/161616/888?text=No+Poster";
+        img.alt = movie.title;
+
+        const label = document.createElement("p");
+        label.className = "movie-title";
+        label.textContent = movie.title;
+
+        card.appendChild(img);
+        card.appendChild(label);
+        gallery.appendChild(card);
+      });
+
+      document.getElementById("results").classList.add("visible");
+
+      // Scroll results into view smoothly
+      document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Modal
+    // ────────────────────────────────────────────────────────────────────────
+    function openModal(movie) {
+      document.getElementById("modal-poster").src = movie.poster
+        ? `data:image/jpeg;base64,${movie.poster}`
+        : "https://via.placeholder.com/300x450/161616/888?text=No+Poster";
+      document.getElementById("modal-title").textContent   = movie.title;
+      document.getElementById("modal-year").textContent    = movie.release_year ?? "";
+      document.getElementById("modal-runtime").textContent = movie.runtime ?? "";
+      document.getElementById("modal-tagline").textContent  = movie.tagline ? `"${movie.tagline}"` : "";
+      document.getElementById("modal-overview").textContent = movie.overview || "No overview available.";
+
+      // Hide tagline element if empty
+      document.getElementById("modal-tagline").style.display = movie.tagline ? "block" : "none";
+      document.getElementById("modal-director").textContent = movie.director || "Unknown";
+      document.getElementById("modal-cast").textContent     = movie.top_cast     || "Unknown";
+
+      document.getElementById("modal-backdrop").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+      document.getElementById("modal-backdrop").classList.remove("open");
+      document.body.style.overflow = "";
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target === document.getElementById("modal-backdrop")) closeModal();
+    }
+
+    // Close on Escape key
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ────────────────────────────────────────────────────────────────────────
+    function showMsg(text, type = "") {
+      const el = document.getElementById("msg");
+      el.textContent = text;
+      el.className = `msg ${type}`;
+    }
+    function clearMsg() { showMsg(""); }
+    function showSpinner(on) {
+      document.getElementById("spinner").classList.toggle("active", on);
+    }
+    function hideResults() {
+      document.getElementById("results").classList.remove("visible");
+    }
+  </script>
+</body>
+</html>

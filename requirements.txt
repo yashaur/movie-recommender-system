@@ -1,7 +1,8 @@
-kagglehub
-pandas
+fastapi
+pydantic
 numpy
-streamlit
-nltk
 scikit-learn
-matplotlib
+pandas
+uvicorn
+requests
+Pillow
