@@ -85,3 +85,7 @@ async def recommend(payload: Movie_input):
     recos = get_recommendations(movie_titles=movie_titles)
 
     return {'recommendations': recos}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
